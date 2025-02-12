@@ -62,7 +62,7 @@ pub fn has_children(ldap_conn: &mut LdapConn, base_dn: &str) -> bool {
             base_dn,
             Scope::OneLevel,   // Only check the immediate children (one level deep)
             "(objectClass=*)", // Adjust search filter as needed
-            vec!["*"],         // Retrieve all attributes (or specify the ones you need)
+            vec!["objectClass"],         // Retrieve all attributes (or specify the ones you need)
         )
         .unwrap()
         .success()

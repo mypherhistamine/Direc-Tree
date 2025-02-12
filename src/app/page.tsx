@@ -49,45 +49,17 @@ export default function Home() {
 
 
 	return (
-		<div className="grid grid-rows-[auto_1fr_auto] items-center  min-h-screen p-8 gap-8 sm:p-16 font-[var(--font-geist-sans)]">
+		<div className="bg-black grid grid-rows-[auto_1fr_auto] items-center  min-h-screen p-8 gap-8 sm:p-16 font-[var(--font-geist-sans)]">
 
-			{/* Connect to server button */}
-			{/* <button */}
-			{/* 	className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300" */}
-			{/* 	onClick={connectLdap} */}
-			{/* > */}
-			{/* 	Connect eDir */}
-			{/* </button> */}
-
-			{/* Get entries button */}
-			{/* <button */}
-			{/* 	className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300" */}
-			{/* 	onClick={getLdapObjects} */}
-			{/* > */}
-			{/* 	Get Entries */}
-			{/* </button> */}
-
-
-			<button
-				className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300"
-				onClick={fetchLdapTree}
-			>
+			<button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300"
+				onClick={fetchLdapTree}>
 				Fetch Tree
 			</button>
 
 			{/* LDAP Tree view */}
-			<LdapTreeView treeData={ldapTree} />
-
-			{/* LDAP entries display */}
-			{/* <div className="w-full space-y-2 text-center"> */}
-			{/* 	{ldapEntries.length > 0 ? ( */}
-			{/* 		ldapEntries.map((entry, key) => ( */}
-			{/* 			<p key={key} className="text-sm sm:text-base text-gray-800 font-medium">{entry}</p> */}
-			{/* 		)) */}
-			{/* 	) : ( */}
-			{/* 		<p className="text-gray-500">No LDAP entries available</p> */}
-			{/* 	)} */}
-			{/* </div> */}
+			<div className="flex ">
+				<LdapTreeView treeData={ldapTree} />
+			</div>
 		</div>
 	);
 

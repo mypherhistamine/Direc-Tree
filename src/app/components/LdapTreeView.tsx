@@ -24,64 +24,68 @@ const renderNode = (node: LdapNode, level: number, toggleNode: (node: LdapNode) 
 	const borderColor = borderColors[level % borderColors.length]; // Cycle through colors based on level
 
 	return (
-		<div key={node.dn} className={`ml-2`}>
-			<div className={`flex items-center ml-${level * 8} rounded-lg ${borderColor} border-dashed max-w-fit inline-block transition-all`}>
-				{/* Depending on the DN, render different icons */}
-
-
-				{node.hasChildren ?
+		<div key={node.dn} className={`ml-4`}>
+			<div
+				className={`flex items-center ml-${level * 8} my-1 max-w-fit inline-block transition-all`}
+			>
+				{/* Expand/Collapse Button */}
+				{node.hasChildren && (
 					<button
 						onClick={() => toggleNode(node)}
 						className="ml-2 text-blue-500 text-sm hover:text-blue-700"
 					>
 						{node.toggled ? "[-]" : "[+]"}
-					</button> : null
-				}
-				{node.dn.startsWith("cn=") ? (
-					<span className="mr-1 text-yellow-500 text-sm">📁</span>  // Folder icon for cn
-				) : (
-					<span className="mr-1 text-blue-500 text-sm">🔑</span>  // Key icon for others
+					</button>
 				)}
 
-				{/* Split the DN by commas and render each part with different colors */}
+				{/* Icon based on the DN type */}
+				{node.dn.startsWith("cn=") ? (
+					<span className="mr-1 text-yellow-500 text-sm">📁</span> // Folder icon for `cn`
+				) : (
+					<span className="mr-1 text-blue-500 text-sm">🔑</span> // Key icon for others
+				)}
+
+				{/* Split and render the DN parts as buttons */}
 				{node.dn.split(",").map((part, index) => {
 					const [key, value] = part.split("=");
 
-					// Define colors for each part of the DN based on the position
+					// Define colors for buttons based on the position
 					let colorClass = "";
 					switch (index) {
 						case 0:
-							colorClass = "text-blue-600";  // First part color
+							colorClass = "bg-blue-100 text-blue-600"; // First part button color
 							break;
 						case 1:
-							colorClass = "text-green-600";  // Second part color
+							colorClass = "bg-green-100 text-green-600"; // Second part button color
 							break;
 						case 2:
-							colorClass = "text-red-600";  // Third part color
+							colorClass = "bg-red-100 text-red-600"; // Third part button color
 							break;
 						default:
-							colorClass = "text-gray-600"; // Default color for other parts
+							colorClass = "bg-gray-100 text-gray-600"; // Default button color
 							break;
 					}
 
 					return (
-						<span key={index} className={`mr-2 text-sm ${colorClass}`}>
+						<button
+							key={index}
+							className={`mr-2 text-sm ${colorClass} rounded-lg px-2 py-1 hover:bg-opacity-75 focus:outline-none`}
+						>
 							{key}={value}
-						</span>
+						</button>
 					);
 				})}
-
-				{/* Expand/Collapse Button */}
 			</div>
 
 			{/* Render children if the node is toggled */}
 			{node.toggled && node.children && node.children.length > 0 && (
 				<div className="ml-3">
-					{node.children.map((child) => renderNode(child, level + 1, toggleNode))}
+					{node.children.map((child) =>
+						renderNode(child, level + 1, toggleNode)
+					)}
 				</div>
 			)}
-		</div>
-	);
+		</div>);
 };
 
 
@@ -141,7 +145,7 @@ const LdapTreeView: React.FC<LdapTreeViewProps> = ({ treeData }) => {
 
 	return (
 		<div className="p-4">
-			<h2 className="text-xl font-semibold mb-4">LDAP Tree View</h2>
+			<h2 className="text-xl font-semibold mb-4">10.71.129.8</h2>
 			{nodes.length > 0 ? (
 				nodes.map((node) => renderNode(node, 0, toggleNode)) // Render the tree starting at level 0
 			) : (
