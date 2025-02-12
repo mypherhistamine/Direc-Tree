@@ -1,96 +1,132 @@
-import React, { useState } from 'react';
-import { LdapNode } from '../models/LdapNode';
-import { FolderIcon, FolderOpenIcon, FolderPlusIcon, GiftTopIcon, HeartIcon, PlusIcon } from '@heroicons/react/16/solid';
+import React, { useState, useEffect, JSX } from "react";
+import { LdapNode } from "../models/LdapNode";  // Ensure correct path to the LdapNode model
+import { invoke } from "@tauri-apps/api/core";
 
 interface LdapTreeViewProps {
-	treeData: LdapNode[]; // Accept the tree data as a prop
+	treeData: LdapNode[];
 }
 
-const LdapTreeView: React.FC<LdapTreeViewProps> = ({ treeData }) => {
-	const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-
-	const toggleNode = (dn: string) => {
-		setExpandedNodes((prev) => {
-			const newExpandedNodes = new Set(prev);
-			if (newExpandedNodes.has(dn)) {
-				newExpandedNodes.delete(dn);
-			} else {
-				newExpandedNodes.add(dn);
-			}
-			return newExpandedNodes;
-		});
-	};
-
-	// Function to determine the icon based on the starting prefix of the DN
-	const getDnIcon = (dn: string) => {
-		if (dn.startsWith('cn=')) {
-			return <FolderIcon className="w-4 h-4 text-gray-500 mr-2" />;
-		} else if (dn.startsWith('ou=')) {
-			return <GiftTopIcon className="w-4 h-4 text-gray-500 mr-2" />;
-		} else {
-			return <PlusIcon className="w-4 h-4 text-gray-500 mr-2" />;
-		}
-	};
-
-	// Function to render the DN with colors and icons
-	const renderDnWithColors = (dn: string) => {
-		const colors = [
-			'text-blue-500',
-			'text-green-500',
-			'text-red-500',
-			'text-purple-500',
-			'text-yellow-500',
-			'text-teal-500',
-		];
-
-		return (
-			<span className="flex items-center flex-wrap">
-				<span className={`${colors[0]} mr-2`}>
-					{getDnIcon(dn)}
-					{dn}
-				</span>
-			</span>
-		);
-	};
-
-	const renderLdapTree = (node: LdapNode) => {
-		const isExpanded = expandedNodes.has(node.dn);
-
-		return (
-			<li key={node.dn} className="ml-4 list-none">
-				<div
-					className="flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded-md transition-all duration-200"
-					onClick={() => toggleNode(node.dn)}
-				>
-					<span
-						className={`mr-2 text-gray-500 ${isExpanded ? 'text-blue-600' : 'text-gray-500'}`}
-					>
-						{isExpanded ? '[-]' : '[+]'}</span>
-					<strong className="text-sm sm:text-base text-gray-800">{renderDnWithColors(node.dn)}</strong>
-				</div>
-
-				{/* <div className="ml-6"> */}
-				{/* 	<strong className="text-gray-700">Attributes:</strong> */}
-				{/* 	<ul className="list-disc pl-5 text-sm text-gray-600"> */}
-				{/* 		{node.attributes.map((attr, index) => ( */}
-				{/* 			<li key={index} className="text-sm">{attr}</li> */}
-				{/* 		))} */}
-				{/* 	</ul> */}
-				{/* </div> */}
-				{/**/}
-				{isExpanded && node.children.length > 0 && (
-					<ul className="ml-6">{node.children.map((childNode) => renderLdapTree(childNode))}</ul>
+// Helper function to render each node recursively
+const renderNode = (node: LdapNode, level: number, toggleNode: (node: LdapNode) => void): JSX.Element => {
+	return (
+		<div key={node.dn} className={`py-1`}>
+			<div className={`flex items-center ml-${level * 6}`}>
+				{/* Depending on the DN, render different icons */}
+				{node.dn.startsWith("cn=") ? (
+					<span className="mr-2 text-yellow-500">📁</span>  // Folder icon for cn
+				) : (
+					<span className="mr-2 text-blue-500">🔑</span>  // Key icon for others
 				)}
-			</li>
-		);
+
+				{/* Split the DN by commas and render each part with different colors */}
+				{node.dn.split(",").map((part, index) => {
+					const [key, value] = part.split("=");
+
+					// Define colors for each part of the DN based on the position
+					let colorClass = "";
+					switch (index) {
+						case 0:
+							colorClass = "text-blue-600";  // First part color
+							break;
+						case 1:
+							colorClass = "text-green-600";  // Second part color
+							break;
+						case 2:
+							colorClass = "text-red-600";  // Third part color
+							break;
+						default:
+							colorClass = "text-gray-600"; // Default color for other parts
+							break;
+					}
+
+					return (
+						<span key={index} className={`mr-2 ${colorClass}`}>
+							{key}={value}
+						</span>
+					);
+				})}
+
+				{/* Add expand/collapse functionality */}
+				{/* {node.children && node.children.length > 0 && ( */}
+				<button
+					onClick={() => toggleNode(node)}
+					className="ml-4 text-blue-500 hover:text-blue-700"
+				>
+					{node.toggled ? "[-]" : "[+]"}
+				</button>
+				{/* )} */}
+			</div>
+
+			{/* Render children if the node is toggled */}
+			{node.toggled && node.children && node.children.length > 0 && (
+				<div className="ml-4">
+					{node.children.map((child) => renderNode(child, level + 1, toggleNode))}
+				</div>
+			)}
+		</div>
+	);
+};
+
+const LdapTreeView: React.FC<LdapTreeViewProps> = ({ treeData }) => {
+	// State to handle expanded/collapsed nodes
+	const [nodes, setNodes] = useState<LdapNode[]>([]);
+
+	// Sync the nodes state with treeData prop whenever it changes
+	useEffect(() => {
+		setNodes(treeData);
+		console.log("nodes set -> ", nodes);
+	}, [treeData]); // The state will update when treeData changes
+
+
+	const toggleNode = async (nodeToToggle: LdapNode) => {
+		// Update the nodes state recursively
+		const updateNode = async (node: LdapNode): Promise<LdapNode> => {
+			if (node.dn === nodeToToggle.dn) {
+				// If this is the node we are toggling
+				let childNodes: LdapNode[] = [];
+
+				if (!node.toggled) {
+					// Fetch the children only when the node is being expanded
+					childNodes = await invoke<LdapNode[]>('fetch_ldap_tree', { baseDn: node.dn });
+
+					// Add `toggled: false` for each child node to ensure they can be toggled independently
+					childNodes = childNodes.map((childNode) => ({
+						...childNode,
+						toggled: false,  // Set the toggled state to false initially
+						children: []     // Set the children to an empty array initially
+					}));
+					console.log("Fetched child nodes for", node.dn, ":", childNodes);
+				}
+
+				// Return the updated node with toggled state and children
+				return { ...node, toggled: !node.toggled, children: childNodes };
+			}
+
+			// If the node is not the one we are toggling, recurse into its children
+			if (node.children && node.children.length > 0) {
+				const updatedChildren = await Promise.all(node.children.map(updateNode));
+				return { ...node, children: updatedChildren }; // Return node with updated children
+			}
+
+			return node; // If no children, just return the node as it is
+		};
+
+		// Apply the update to all nodes
+		const updatedNodes = await Promise.all(nodes.map(updateNode));
+
+		// Update the state with the newly updated nodes array
+		setNodes(updatedNodes);
 	};
+
 
 	return (
-		<div className="p-4 bg-white rounded-lg shadow-md w-full max-w-4xl mx-auto">
-			<h2 className="text-2xl font-semibold text-gray-800 mb-4">LDAP Tree View</h2>
-			<ul className="space-y-2">
-				{treeData.length > 0 ? treeData.map(renderLdapTree) : <p className="text-gray-500">Loading LDAP tree...</p>}
-			</ul>
+		<div className="p-4">
+			<h2 className="text-xl font-semibold mb-4">LDAP Tree View</h2>
+			{nodes.length > 0 ? (
+				nodes.map((node) => renderNode(node, 0, toggleNode)) // Render the tree starting at level 0
+			) : (
+				<p>Loading LDAP tree...</p>
+			)}
 		</div>
 	);
 };

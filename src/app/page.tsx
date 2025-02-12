@@ -1,6 +1,6 @@
 'use client'
 import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LdapTreeView from "./components/LdapTreeView";
 import { LdapNode } from "./models/LdapNode";
 
@@ -29,35 +29,43 @@ export default function Home() {
 
 
 	const fetchLdapTree = async () => {
+		await connectLdap();
+		console.log("fetching tree data");
 		try {
-			const tree = await invoke<LdapNode[]>('fetch_ldap_tree'); // Adjust type if needed
-			console.log('Fetched LDAP Tree:', tree);
-			setLdapTree(tree); // Set the tree data into state
+			invoke<LdapNode[]>('fetch_ldap_tree', { baseDn: 'o=novell' }).then((tree) => {
+				console.log('Fetched LDAP Tree:', tree);
+				setLdapTree(tree); // Set the tree data into state
+			}) // Adjust type if needed
+
 		} catch (error) {
 			console.error('Error fetching LDAP tree:', error);
 		}
 	};
 
+	// Call fetchLdapTree when component mounts
+	useEffect(() => {
+		fetchLdapTree();
+	}, []);
 
 
 	return (
-		<div className="grid grid-rows-[auto_1fr_auto] items-center justify-center min-h-screen p-8 gap-8 sm:p-16 font-[var(--font-geist-sans)]">
+		<div className="grid grid-rows-[auto_1fr_auto] items-center  min-h-screen p-8 gap-8 sm:p-16 font-[var(--font-geist-sans)]">
 
 			{/* Connect to server button */}
-			<button
-				className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300"
-				onClick={connectLdap}
-			>
-				Connect eDir
-			</button>
+			{/* <button */}
+			{/* 	className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300" */}
+			{/* 	onClick={connectLdap} */}
+			{/* > */}
+			{/* 	Connect eDir */}
+			{/* </button> */}
 
 			{/* Get entries button */}
-			<button
-				className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300"
-				onClick={getLdapObjects}
-			>
-				Get Entries
-			</button>
+			{/* <button */}
+			{/* 	className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300" */}
+			{/* 	onClick={getLdapObjects} */}
+			{/* > */}
+			{/* 	Get Entries */}
+			{/* </button> */}
 
 
 			<button
