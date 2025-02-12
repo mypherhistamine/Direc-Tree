@@ -7,15 +7,40 @@ interface LdapTreeViewProps {
 }
 
 // Helper function to render each node recursively
+
 const renderNode = (node: LdapNode, level: number, toggleNode: (node: LdapNode) => void): JSX.Element => {
+	// Define an array of colors to cycle through
+	const borderColors = [
+		"border-blue-500",  // Level 0
+		"border-green-500", // Level 1
+		"border-red-500",   // Level 2
+		"border-yellow-500",// Level 3
+		"border-purple-500",// Level 4
+		"border-pink-500",  // Level 5
+		"border-indigo-500",// Level 6
+	];
+
+	// Use the level of the node to select the border color from the array
+	const borderColor = borderColors[level % borderColors.length]; // Cycle through colors based on level
+
 	return (
-		<div key={node.dn} className={`py-1`}>
-			<div className={`flex items-center ml-${level * 6}`}>
+		<div key={node.dn} className={`ml-2`}>
+			<div className={`flex items-center ml-${level * 8} rounded-lg ${borderColor} border-dashed max-w-fit inline-block transition-all`}>
 				{/* Depending on the DN, render different icons */}
+
+
+				{node.hasChildren ?
+					<button
+						onClick={() => toggleNode(node)}
+						className="ml-2 text-blue-500 text-sm hover:text-blue-700"
+					>
+						{node.toggled ? "[-]" : "[+]"}
+					</button> : null
+				}
 				{node.dn.startsWith("cn=") ? (
-					<span className="mr-2 text-yellow-500">📁</span>  // Folder icon for cn
+					<span className="mr-1 text-yellow-500 text-sm">📁</span>  // Folder icon for cn
 				) : (
-					<span className="mr-2 text-blue-500">🔑</span>  // Key icon for others
+					<span className="mr-1 text-blue-500 text-sm">🔑</span>  // Key icon for others
 				)}
 
 				{/* Split the DN by commas and render each part with different colors */}
@@ -40,32 +65,27 @@ const renderNode = (node: LdapNode, level: number, toggleNode: (node: LdapNode) 
 					}
 
 					return (
-						<span key={index} className={`mr-2 ${colorClass}`}>
+						<span key={index} className={`mr-2 text-sm ${colorClass}`}>
 							{key}={value}
 						</span>
 					);
 				})}
 
-				{/* Add expand/collapse functionality */}
-				{/* {node.children && node.children.length > 0 && ( */}
-				<button
-					onClick={() => toggleNode(node)}
-					className="ml-4 text-blue-500 hover:text-blue-700"
-				>
-					{node.toggled ? "[-]" : "[+]"}
-				</button>
-				{/* )} */}
+				{/* Expand/Collapse Button */}
 			</div>
 
 			{/* Render children if the node is toggled */}
 			{node.toggled && node.children && node.children.length > 0 && (
-				<div className="ml-4">
+				<div className="ml-3">
 					{node.children.map((child) => renderNode(child, level + 1, toggleNode))}
 				</div>
 			)}
 		</div>
 	);
 };
+
+
+
 
 const LdapTreeView: React.FC<LdapTreeViewProps> = ({ treeData }) => {
 	// State to handle expanded/collapsed nodes
