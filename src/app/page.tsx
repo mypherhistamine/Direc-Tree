@@ -7,7 +7,7 @@ import { LdapNode } from "./models/LdapNode";
 
 export default function Home() {
 
-	const [ldapEntries, setLdapEntries] = useState([]);
+	// const [_, setLdapEntries] = useState([]);
 	const [ldapTree, setLdapTree] = useState<LdapNode[]>([]);
 
 
@@ -21,11 +21,11 @@ export default function Home() {
 
 
 
-	const getLdapObjects = async () => {
-		console.log("get_all_ldap_objects being called")
-		const entries = await invoke<[]>('get_all_ldap_objects')
-		setLdapEntries(entries);
-	}
+	// const getLdapObjects = async () => {
+	// 	console.log("get_all_ldap_objects being called")
+	// 	const entries = await invoke<[]>('get_all_ldap_objects')
+	// 	setLdapEntries(entries);
+	// }
 
 
 	const fetchLdapTree = async () => {
@@ -49,12 +49,12 @@ export default function Home() {
 
 
 	return (
-		<div className="bg-black grid grid-rows-[auto_1fr_auto] items-center  min-h-screen p-8 gap-8 sm:p-16 font-[var(--font-geist-sans)]">
+		<div className="bg-black grid grid-rows-[auto_1fr_auto] items-center  min-h-screen  font-[var(--font-geist-sans)]">
 
-			<button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300"
-				onClick={fetchLdapTree}>
-				Fetch Tree
-			</button>
+			{/* <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300" */}
+			{/* 	onClick={fetchLdapTree}> */}
+			{/* 	Fetch Tree */}
+			{/* </button> */}
 
 			{/* LDAP Tree view */}
 			<div className="flex ">
