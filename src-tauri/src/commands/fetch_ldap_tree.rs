@@ -14,7 +14,7 @@ pub fn fetch_ldap_tree(state: State<'_, Arc<Mutex<AppState>>>, base_dn: &str) ->
     match ldap_conn {
         Some(con) => {
             let entries = get_ldap_tree(con, base_dn);
-            println!("Fetched the ldap entries");
+            // println!("Fetched the ldap entries");
             entries
         }
         None => Vec::new(),
@@ -44,11 +44,13 @@ pub fn get_ldap_tree(ldap_conn: &mut LdapConn, base_dn: &str) -> Vec<LdapNode> {
 
         let node = LdapNode {
             dn: search_entry.dn.clone(),
-            attributes: search_entry.attrs.keys().cloned().collect(),
+            attributes: Vec::new(),
+            // attributes: search_entry.attrs.keys().cloned().collect(),
             children: Vec::new(), // Initially empty; will be populated on demand
             toggled: false,       // Default state is collapsed
             has_children: has_child_nodes, // Add the flag to check if the node can be expanded
         };
+        // println!("node -> {:?}", node);
 
         nodes.push(node);
     }

@@ -5,7 +5,7 @@ use native_tls::TlsConnector;
 
 pub fn get_ldap_conn() -> LdapConn {
     let connector = get_tls_connector();
-    let conn_url = "ldaps://10.71.129.8:636"; // Port 636 is standard for LDAPS
+    let conn_url = "ldaps://10.71.144.135:636"; // Port 636 is standard for LDAPS
     println!("Connecting securely to {conn_url} ...");
     // Establish a secure LDAP connection with TLS
     let settings = LdapConnSettings::new()
@@ -15,19 +15,19 @@ pub fn get_ldap_conn() -> LdapConn {
     LdapConn::with_settings(settings, conn_url).unwrap()
 }
 
-pub async fn get_ldap_async_conn() -> Ldap {
-    let connector = get_tls_connector();
-    let conn_url = "ldaps://10.71.129.8:636"; // Port 636 is standard for LDAPS
-
-    let settings = LdapConnSettings::new()
-        .set_conn_timeout(Duration::from_secs(60))
-        .set_connector(connector)
-        .set_no_tls_verify(true); // Disable certificate validation in LDAP connection as well
-    LdapConnAsync::with_settings(settings, conn_url)
-        .await
-        .unwrap()
-        .1
-}
+// pub async fn get_ldap_async_conn() -> Ldap {
+//     let connector = get_tls_connector();
+//     let conn_url = "ldaps://10.71.129.8:636"; // Port 636 is standard for LDAPS
+//
+//     let settings = LdapConnSettings::new()
+//         .set_conn_timeout(Duration::from_secs(60))
+//         .set_connector(connector)
+//         .set_no_tls_verify(true); // Disable certificate validation in LDAP connection as well
+//     LdapConnAsync::with_settings(settings, conn_url)
+//         .await
+//         .unwrap()
+//         .1
+// }
 
 fn get_tls_connector() -> TlsConnector {
     // Create a TlsConnectorBuilder

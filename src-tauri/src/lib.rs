@@ -2,6 +2,7 @@ mod state_management;
 mod commands;
 mod ldap_conn;
 mod models;
+mod constants;
 use std::sync::{Arc, Mutex};
 
 use state_management::app_state::AppState;
@@ -24,7 +25,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::connect_ldap::connect_ldap,
             commands::get_all_ldap_objects::get_all_ldap_objects,
-            commands::fetch_ldap_tree::fetch_ldap_tree
+            commands::fetch_ldap_tree::fetch_ldap_tree,
+            commands::fetch_ldap_entry_attrs::fetch_node_attributes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
