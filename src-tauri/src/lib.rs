@@ -26,7 +26,8 @@ pub fn run() {
             commands::connect_ldap::connect_ldap,
             commands::get_all_ldap_objects::get_all_ldap_objects,
             commands::fetch_ldap_tree::fetch_ldap_tree,
-            commands::fetch_ldap_entry_attrs::fetch_node_attributes
+            commands::fetch_ldap_entry_attrs::fetch_node_attributes,
+            commands::fetch_ldap_entry_attrs::determine_attribute_type
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
