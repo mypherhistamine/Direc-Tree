@@ -30,9 +30,19 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-	background: red; /* Slightly darker on hover */
+	background: gray; /* Slightly darker on hover */
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-	background: blue; /* Very light background */
+	background: black; /* Very light background */
+}
+
+.react-resizable-handle {
+  width: 40px;
+  height: 100%;
+  margin-right: 8px;
+  position: relative;
+  right: 0;
+  top: 0;
+  cursor: none;
 }

@@ -1,127 +1,201 @@
-import React, { useState, useEffect, JSX } from "react";
-import { LdapNode } from "../models/LdapNode"; // Ensure correct path to the LdapNode model
+import React, { useEffect, useState } from "react";
+import { LdapNode } from "../models/LdapNode";
 import { invoke } from "@tauri-apps/api/core";
+import { RichTreeView } from "@mui/x-tree-view";
+import { CustomTreeItem, findNodeRecursively } from "../utils";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
+import Base64ImageDisplay from "./Base64ImageDisplay";
+import { Resizable, ResizableBox } from 'react-resizable';
+import "react-resizable/css/styles.css";
+import { CustomResizeHandle } from "../ux/CustomResizeHandle";
+import JsonView from '@uiw/react-json-view';
+import { AttributeType } from "../models/AttributeTypeEnum";
 
 interface LdapTreeViewProps {
 	treeData: LdapNode[];
 }
 
 const LdapTreeView: React.FC<LdapTreeViewProps> = ({ treeData }) => {
-	// State to handle expanded/collapsed nodes
 	const [nodes, setNodes] = useState<LdapNode[]>([]);
-	const [selectedNode, setSelectedNode] = useState<LdapNode | null>(null); // State for selected node
+	const [expandedNodes, setExpandedNodes] = useState<string[]>([]); // To track expanded nodes
+	const [selectedNode, setSelectedNode] = useState<LdapNode | null>(null);
 	const [selectedAttributeContent, setSelectedAttributeContent] = useState<string | null>(null);
 	const [selectedAttributeKey, setSelectedAttributeKey] = useState<string | null>(null);
+	const [treeViewWidth, setTreeViewWidth] = useState(450); // Initial width
+	const [attributeType, setAttributeType] = useState(AttributeType.String);
 
 	// Sync the nodes state with treeData prop whenever it changes
 	useEffect(() => {
-		setNodes(treeData);
+
+		console.log("treedata -> ", treeData)
+		setNodes(
+			treeData.map((item, idx) => ({
+				...item,
+				id: item.dn,
+				label: item.dn.split(",")[0],
+				children: item.hasChildren ? [{
+					id: `child-${idx}`,
+					label: "Loading...",
+					toggled: false,
+					hasChildren: true,
+					dn: "othing",                   // Distinguished Name (DN)
+				}] : []
+			}))
+		);
+
+		//also if there are expandedNodes we will toggle that as well
 	}, [treeData]);
+
+
 
 	const toggleNode = async (nodeToToggle: LdapNode) => {
 		const updateNode = async (node: LdapNode): Promise<LdapNode> => {
+			// If this is the node to toggle
 			if (node.dn === nodeToToggle.dn) {
-				let childNodes: LdapNode[] = [];
-				if (!node.toggled) {
-					childNodes = await invoke<LdapNode[]>("fetch_ldap_tree", { baseDn: node.dn });
-					childNodes = childNodes.map((childNode) => ({
-						...childNode,
+				let childNodes: LdapNode[] = [
+					{
+						id: `child-${node.dn}`,
+						label: "Loading child...",
 						toggled: false,
-						children: [],
+						hasChildren: true,
+						dn: "loading",
+					},
+				];
+
+				if (!node.toggled) {
+					// Fetch children only when opening the node
+					childNodes = await invoke<LdapNode[]>("fetch_ldap_tree", { baseDn: node.dn });
+					childNodes = childNodes.map((childNode, idx) => ({
+						...childNode,
+						toggled: false, // Initialize child nodes as closed
+						children: childNode.hasChildren
+							? [
+								{
+									id: `child-${childNode.dn}-${idx}`,
+									label: "Loading inside toggled child...",
+									toggled: false,
+									hasChildren: false,
+									dn: "loading",
+								},
+							]
+							: [],
+						id: childNode.dn,
+						label: childNode.dn.split(",")[0], // Simplified label
 					}));
 				}
-				return { ...node, toggled: !node.toggled, children: childNodes };
+
+				// Return updated node while preserving `hasChildren`
+				return {
+					...node,
+					toggled: !node.toggled,
+					children: node.toggled ? [] : childNodes, // Clear children only visually when toggling closed
+				};
 			}
+
+			// Recursively update children if present
 			if (node.children && node.children.length > 0) {
 				const updatedChildren = await Promise.all(node.children.map(updateNode));
 				return { ...node, children: updatedChildren };
 			}
+
+			// Return unchanged node
 			return node;
 		};
+
+		// Update the tree nodes
 		const updatedNodes = await Promise.all(nodes.map(updateNode));
 		setNodes(updatedNodes);
+
+		// Update expanded nodes
+		setExpandedNodes((prevExpanded) => {
+			if (nodeToToggle.toggled) {
+				// If closing, remove from expanded list
+				return prevExpanded.filter((dn) => dn !== nodeToToggle.dn);
+			} else {
+				// If opening, add to expanded list
+				return [...prevExpanded, nodeToToggle.dn];
+			}
+		});
 	};
 
 	const handleNodeClick = async (node: LdapNode) => {
-		// Fetch attributes for the selected node
 		const attributes = await invoke<Record<string, string>>("fetch_node_attributes", { baseDn: node.dn });
-		setSelectedNode({ ...node, attributes }); // Update state with the selected node and its attributes
+		setSelectedNode({ ...node, attributes });
 	};
 
-	const renderNode = (node: LdapNode, level: number): JSX.Element => {
-		// const borderColors = ["border-blue-500", "border-green-500", "border-red-500", "border-yellow-500"];
-		// const borderColor = borderColors[level % borderColors.length];
-
-		return (
-			<div key={node.dn} className="ml-4">
-				<div
-					className={`flex items-center ml-${level * 8} my-1 max-w-fit inline-block transition-all`}
-				>
-					{/* Expand/Collapse Button */}
-					{node.hasChildren && (
-						<button
-							onClick={() => toggleNode(node)}
-							className="ml-2 text-blue-500 text-sm hover:text-blue-700"
-						>
-							{node.toggled ? "[-]" : "[+]"}
-						</button>
-					)}
-
-					{/* Node Icon */}
-					{node.dn.startsWith("cn=") ? (
-						<span className="mr-1 text-yellow-500 text-sm">📁</span>
-					) : (
-						<span className="mr-1 text-blue-500 text-sm">🔑</span>
-					)}
-
-					{/* Node DN */}
-					<button
-						className={`text-sm bg-blue-100 text-blue-600 rounded-lg px-2 py-1 hover:bg-opacity-75 focus:outline-none`}
-						onClick={() => handleNodeClick(node)} // Handle click to select node
-						id={node.dn}
-					>
-						{node.dn.split(",")[0]}
-					</button>
-				</div>
-
-				{/* Render Children */}
-				{node.toggled && node.children && node.children.length > 0 && (
-					<div className="ml-3">
-						{node.children.map((child) => renderNode(child, level + 1))}
-					</div>
-				)}
-			</div>
-		);
+	const handleItemClick = async (_event: React.MouseEvent, itemId: string) => {
+		const ldapNode = findNodeRecursively(nodes, itemId);
+		if (ldapNode) {
+			await toggleNode(ldapNode);
+			await handleNodeClick(ldapNode);
+		} else {
+			console.log("not found in current parent node finding in child nodes");
+		}
 	};
 
-	const handleAttributeClick = (key: string, value: string) => {
-		// Here, you can either return the value or fetch additional data if necessary
-		setSelectedAttributeContent(value); // Set the full content for display in the right column
-		setSelectedAttributeKey(key);
+
+	const determineAttributeType = async (attributeValue: string) => {
+		// Call the Rust function via Tauri's `invoke` API
+		if (selectedAttributeContent) {
+			const result: AttributeType = await invoke('determine_attribute_type', { value: attributeValue });
+			console.log("the type is ", result)
+			setAttributeType(result)
+		}
+
+	}
+
+	const handleAttributeClick = async (key: string, value: string) => {
+		setSelectedAttributeContent(value);
+		setSelectedAttributeKey(key)
+		await determineAttributeType(value);
 	};
 
 	return (
-		<div className="flex h-screen">
-			{/* Tree View */}
-			<div className="w-1/3 border-r">
-				<div className="h-full overflow-y-auto custom-scrollbar">
-					{nodes.length > 0 ? (
-						nodes.map((node) => renderNode(node, 0))
-					) : (
-						<p>Loading LDAP tree...</p>
-					)}
-				</div>
-			</div>
+		<div className="flex h-screen bg-gray-100">
 
-			{/* Node Details */}
-			<div className="flex p-4">
-				{/* Table Section */}
-				<div className="">
-					<h2 className="text-xl font-semibold mb-4">Node Details</h2>
-					{selectedNode ? (
-						<div>
-							<div className="overflow-x-auto rounded-lg">
-								<table className="table-auto border-collapse border border-gray-300 w-full max-w-full rounded-lg">
+			<div className="flex h-screen bg-gray-100">
+				<Resizable
+					width={treeViewWidth}
+					height={Infinity}
+					minConstraints={[200, Infinity]}
+					maxConstraints={[600, Infinity]}
+					axis="x"
+					onResize={(e, { size }) => {
+						console.log("resiing the component")
+						setTreeViewWidth(size.width); // Manage the width state manually
+					}}
+					resizeHandles={["e"]}
+				>
+					<div
+						style={{
+							width: `${treeViewWidth}px`, // Dynamically update the width
+							height: "100%",
+						}}
+						className="border-r border-red-700 bg-white shadow-md overflow-y-auto"
+					>
+						<RichTreeView
+							slots={{ item: CustomTreeItem }}
+							className="h-full overflow-y-auto text-white"
+							items={nodes}
+							expandedItems={expandedNodes}
+							onItemClick={(event, itemId) => handleItemClick(event, itemId)}
+						/>
+					</div>
+				</Resizable>
+			</div>
+			{/* Node Details Section */}
+			<div className="flex flex-col gap-2 overflow-hidden">
+				{/* Attributes Table */}
+				<Card className="flex-grow bg-white shadow-lg border border-gray-300 overflow-hidden">
+					<CardContent>
+						<Typography variant="h6" component="h3" className="mb-4 text-gray-600">
+							Node Details
+						</Typography>
+						{selectedNode ? (
+							<div className="overflow-y-auto h-screen">
+								<table className="table-auto border-collapse border border-gray-300 w-full">
 									<thead className="bg-gray-200">
 										<tr>
 											<th className="border border-gray-300 px-4 py-2 text-left text-sm font-semibold text-gray-600">
@@ -132,21 +206,26 @@ const LdapTreeView: React.FC<LdapTreeViewProps> = ({ treeData }) => {
 											</th>
 										</tr>
 									</thead>
+
 									<tbody>
 										{selectedNode.attributes &&
 											Object.entries(selectedNode.attributes).map(([key, value], index) => (
 												<tr
 													key={key}
-													className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
-														} hover:bg-gray-100 transition-all`}
+													className={`
+														${index % 2 === 0 ? "bg-white" : "bg-gray-50"} 
+														${key === selectedAttributeKey ? "bg-blue-100 font-bold" : "hover:bg-gray-100"} 
+														transition-all
+													`}
+													onClick={async () => handleAttributeClick(key, value)}
 												>
 													<td className="border border-gray-300 px-4 py-2 font-medium text-sm text-gray-700">
 														{key}
 													</td>
 													<td
-														className="border border-gray-300 px-4 py-2 text-sm text-gray-600 truncate overflow-hidden max-w-xs"
-														title={value} // Tooltip to display full value
-														onClick={() => handleAttributeClick(key, value)}
+														className="border border-gray-300 px-4 py-2 text-sm text-gray-600 truncate overflow-hidden"
+														style={{ maxWidth: "300px" }} // Limit width of cell content
+														title={value}
 													>
 														{value}
 													</td>
@@ -155,38 +234,57 @@ const LdapTreeView: React.FC<LdapTreeViewProps> = ({ treeData }) => {
 									</tbody>
 								</table>
 							</div>
-						</div>
-					) : (
-						<p className="text-gray-500">Select a node to see its details.</p>
-					)}
-				</div>
+						) : (
+							<p className="text-gray-500">Select a node to see its details.</p>
+						)}
+					</CardContent>
+				</Card>
 
-				{/* New Column for Full Content */}
-				<div className="pl-4 max-w-full overflow-hidden">
-					<h3 className="text-xl font-semibold mb-4">Full Content</h3>
-					{selectedAttributeContent ? (
-						<div className="overflow-auto max-h-[300px] p-4 border border-gray-300 rounded-lg bg-gray-50">
-							<pre className="whitespace-pre-wrap break-words text-gray-600">{selectedAttributeContent}</pre>
-						</div>
-					) : (
-						<p className="text-gray-500">Click on an attribute to see its full content.</p>
-					)}
-				</div>
+				{/* Full Attribute Content */}
+				<Card className="flex-grow bg-white shadow-lg border border-gray-300 overflow-hidden">
+					<CardContent>
+						<Typography variant="h6" component="h3" className="mb-4 text-gray-800">
+							Full Content
+						</Typography>
+						{selectedAttributeContent ? (
+							<div className="overflow-auto max-h-[400px] max-w-[600px] p-4 border border-gray-300 rounded-lg bg-gray-50 shadow-sm">
+								<pre className="whitespace-pre-wrap break-words text-gray-700 text-sm">
+									{selectedAttributeContent}
+								</pre>
+							</div>
+						) : (
+							<p className="text-gray-500">Click on an attribute to see its full content.</p>
+						)}
+					</CardContent>
+				</Card>
 			</div>
 
-			{/* XML Viewer */}
-			{/* { */}
-			{/**/}
-			{/* 	selectedAttributeKey?.includes("nidsImage") ? */}
-			{/* 		<XMLViewer xml={selectedAttributeContent!} ></XMLViewer> : null */}
-			{/* } */}
-			{/* selectedAttributeKey?.includes("nidsImage") !== null ? <XMLViewer xml="<hello></hello>" /> : null */}
 
-		</div >
+			{/* XML Viewer Section */}
+			{/* <div className="min-w-[400px] max-w-[500px] bg-gray-300 overflow-auto p-2 border border-gray-300 rounded-lg shadow-lg mx-4 my-4"> */}
+			{/* 	<XMLViewer className="bg-gray-200" xml={selectedAttributeContent!} indentSize={4} indentUseTabs={false} /> */}
+			{/* </div> */}
 
+
+			{
+				attributeType === AttributeType.Json && selectedAttributeContent ?
+					<div className="m-4 p-4">
+						<JsonView value={JSON.parse(selectedAttributeContent)}
+							displayDataTypes={false}
+
+						/>
+					</div>
+					: null
+			}
+
+			{/* Show the image Viewer */}
+			{
+				attributeType === AttributeType.Base64 && selectedAttributeContent ?
+					<Base64ImageDisplay base64String={selectedAttributeContent}></Base64ImageDisplay> : null
+			}
+		</div>
 
 	);
-
 };
 
 export default LdapTreeView;

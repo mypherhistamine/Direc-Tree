@@ -32,7 +32,7 @@ export default function Home() {
 		await connectLdap();
 		console.log("fetching tree data");
 		try {
-			invoke<LdapNode[]>('fetch_ldap_tree', { baseDn: 'o=novell' }).then((tree) => {
+			invoke<LdapNode[]>('fetch_ldap_tree', { baseDn: '' }).then((tree) => {
 				console.log('Fetched LDAP Tree:', tree);
 				setLdapTree(tree); // Set the tree data into state
 			}) // Adjust type if needed
@@ -49,7 +49,7 @@ export default function Home() {
 
 
 	return (
-		<div className="bg-black grid grid-rows-[auto_1fr_auto] items-center  min-h-screen  font-[var(--font-geist-sans)]">
+		<div className="bg-gray-800 grid grid-rows-[auto_1fr_auto] items-center  min-h-screen  font-[var(--font-geist-sans)]">
 
 			{/* <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300" */}
 			{/* 	onClick={fetchLdapTree}> */}
