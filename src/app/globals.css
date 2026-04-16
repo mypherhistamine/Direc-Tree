@@ -3,46 +3,116 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #0f172a;
+  --foreground: #e2e8f0;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Consolas';
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
 }
 
+/* ─── Custom Scrollbar (dark themed) ─── */
 .custom-scrollbar::-webkit-scrollbar {
-	width: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-	background: #9ca3af; /* Neutral gray for better aesthetics */
-	border-radius: 4px;
+  background: #334155;
+  border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-	background: gray; /* Slightly darker on hover */
+  background: #475569;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-	background: black; /* Very light background */
+  background: transparent;
 }
 
+/* Also apply to all scrollable areas by default */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ─── Resize Handle ─── */
 .react-resizable-handle {
-  width: 40px;
-  height: 100%;
-  margin-right: 8px;
-  position: relative;
+  width: 4px !important;
+  height: 100% !important;
+  position: absolute;
   right: 0;
   top: 0;
-  cursor: none;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+
+.react-resizable-handle:hover,
+.react-resizable-handle:active {
+  background: #3b82f6;
+}
+
+/* ─── MUI Tree View Overrides for dark theme ─── */
+.MuiTreeItem-content {
+  border-radius: 6px !important;
+  padding: 2px 8px !important;
+  margin: 1px 0 !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.MuiTreeItem-content:hover {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+.MuiTreeItem-content.Mui-selected {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.MuiTreeItem-content.Mui-selected:hover {
+  background-color: rgba(59, 130, 246, 0.22) !important;
+}
+
+.MuiTreeItem-label {
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  color: #cbd5e1 !important;
+}
+
+.MuiTreeItem-content.Mui-selected .MuiTreeItem-label {
+  color: #93c5fd !important;
+}
+
+.MuiTreeItem-iconContainer svg {
+  font-size: 1rem !important;
+  color: #64748b !important;
+}
+
+.MuiTreeItem-content.Mui-selected .MuiTreeItem-iconContainer svg {
+  color: #60a5fa !important;
+}
+
+/* ─── XML Viewer dark background override ─── */
+.xml-viewer-container {
+  padding: 16px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 }

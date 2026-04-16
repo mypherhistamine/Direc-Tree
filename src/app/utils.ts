@@ -1,4 +1,4 @@
-import { alpha, styled } from "@mui/material/styles";
+import { styled } from "@mui/material/styles";
 import { LdapNode } from "./models/LdapNode";
 import { TreeItem, treeItemClasses } from "@mui/x-tree-view";
 
@@ -19,29 +19,36 @@ export const findNodeRecursively = (nodeList: LdapNode[], targetDn: string): Lda
 
 
 export const CustomTreeItem = styled(TreeItem)(({ theme }) => ({
-	color: "gray",  // Use theme's primary text color
+	color: "#94a3b8", // slate-400
 	[`& .${treeItemClasses.content}`]: {
-		borderRadius: theme.spacing(0.5),
-		padding: theme.spacing(0.2, 0.5),
-		margin: theme.spacing(0.2, 0),
+		borderRadius: theme.spacing(0.7),
+		padding: theme.spacing(0.3, 0.6),
+		margin: theme.spacing(0.15, 0),
+		transition: "background-color 0.15s ease, color 0.15s ease",
 		[`& .${treeItemClasses.label}`]: {
-			fontSize: "0.9rem",
+			fontSize: "0.82rem",
 			fontWeight: 500,
+			color: "#cbd5e1", // slate-300
+		},
+		"&:hover": {
+			backgroundColor: "rgba(59, 130, 246, 0.08)",
+		},
+		"&.Mui-selected": {
+			backgroundColor: "rgba(59, 130, 246, 0.15)",
+			[`& .${treeItemClasses.label}`]: {
+				color: "#93c5fd", // blue-300
+			},
 		},
 	},
 	[`& .${treeItemClasses.iconContainer}`]: {
 		borderRadius: "50%",
-		backgroundColor:
-			theme.palette.mode === "dark"
-				? theme.palette.primary.light
-				: alpha(theme.palette.primary.main, 0.20), // Conditional styling for light/dark mode
-		padding: theme.spacing(0, 1),
-		color: theme.palette.mode === "dark" ? theme.palette.primary.contrastText : theme.palette.primary.main,
+		backgroundColor: "rgba(59, 130, 246, 0.1)",
+		padding: theme.spacing(0, 0.8),
+		color: "#60a5fa", // blue-400
 	},
 	[`& .${treeItemClasses.root}`]: {
 		marginLeft: theme.spacing(1.0),
 		paddingLeft: theme.spacing(1),
-		// borderLeft: `2px solid ${alpha(theme.palette.text.primary, 0.4)}`, // Dashed border for grouping
-		borderLeft: `1px dashed gray`, // Dashed border for grouping
+		borderLeft: `1px dashed #334155`, // slate-700
 	},
 }));

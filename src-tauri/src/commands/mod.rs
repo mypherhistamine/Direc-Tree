@@ -1,4 +1,11 @@
 pub mod connect_ldap;
-pub mod get_all_ldap_objects;
-pub mod fetch_ldap_tree;
+pub mod disconnect_ldap;
+pub mod fetch_attribute_value;
 pub mod fetch_ldap_entry_attrs;
+pub mod fetch_ldap_tree;
+pub mod fetch_schema;
+pub mod get_all_ldap_objects;
+pub mod log_commands;
+pub mod modify_entry;
+pub mod profile_management;
+pub mod search_ldap;

@@ -1,50 +1,65 @@
 use std::time::Duration;
 
-use ldap3::{Ldap, LdapConn, LdapConnAsync, LdapConnSettings};
+use ldap3::{LdapConn, LdapConnSettings};
 use native_tls::TlsConnector;
 
 use crate::constants::{PASSWORD, USERNAME_DN};
 
+/// Legacy helper — uses hardcoded constants (kept for dev convenience)
 pub fn get_ldap_conn() -> LdapConn {
-    let connector = get_tls_connector();
-    let conn_url = "ldaps://10.71.144.135:636"; // Port 636 is standard for LDAPS
-    println!("Connecting securely to {conn_url} ...");
-    // Establish a secure LDAP connection with TLS
+    let connector = get_tls_connector(true);
+    let conn_url = "ldaps://10.71.129.131:636";
+    tracing::debug!(url = conn_url, "legacy get_ldap_conn");
     let settings = LdapConnSettings::new()
         .set_conn_timeout(Duration::from_secs(60))
         .set_connector(connector)
-        .set_no_tls_verify(true); // Disable certificate validation in LDAP connection as well
+        .set_no_tls_verify(true);
     LdapConn::with_settings(settings, conn_url).unwrap()
 }
 
-pub fn simple_user_pwd_bind(ldap_connection : &mut LdapConn) {
+/// Parameterized connection — used by the updated connect_ldap command
+pub fn get_ldap_conn_with_params(url: &str, no_tls_verify: bool) -> Result<LdapConn, String> {
+    let connector = get_tls_connector(no_tls_verify);
+    tracing::debug!(url = url, no_tls_verify = no_tls_verify, "get_ldap_conn_with_params");
+    let settings = LdapConnSettings::new()
+        .set_conn_timeout(Duration::from_secs(60))
+        .set_connector(connector)
+        .set_no_tls_verify(no_tls_verify);
+    LdapConn::with_settings(settings, url)
+        .map_err(|e| format!("Connection failed: {}", e))
+}
+
+/// Legacy bind — uses hardcoded constants
+pub fn simple_user_pwd_bind(ldap_connection: &mut LdapConn) {
     match ldap_connection.simple_bind(USERNAME_DN, PASSWORD) {
-        Ok(res) => println!("Simple bind was successfull -> {res}"),
-        Err(err) => println!("Some error occured while simple bind -> {err}"),
+        Ok(res) => tracing::debug!(rc = res.rc, "legacy simple_bind ok"),
+        Err(err) => tracing::error!(error = %err, "legacy simple_bind failed"),
     }
 }
 
-// pub async fn get_ldap_async_conn() -> Ldap {
-//     let connector = get_tls_connector();
-//     let conn_url = "ldaps://10.71.129.8:636"; // Port 636 is standard for LDAPS
-//
-//     let settings = LdapConnSettings::new()
-//         .set_conn_timeout(Duration::from_secs(60))
-//         .set_connector(connector)
-//         .set_no_tls_verify(true); // Disable certificate validation in LDAP connection as well
-//     LdapConnAsync::with_settings(settings, conn_url)
-//         .await
-//         .unwrap()
-//         .1
-// }
+/// Parameterized bind
+pub fn simple_user_pwd_bind_with_params(
+    ldap_connection: &mut LdapConn,
+    bind_dn: &str,
+    password: &str,
+) -> Result<(), String> {
+    ldap_connection
+        .simple_bind(bind_dn, password)
+        .map_err(|e| format!("Bind error: {}", e))
+        .and_then(|res| {
+            if res.rc == 0 {
+                tracing::debug!("bind successful");
+                Ok(())
+            } else {
+                Err(format!("Bind failed with rc={}: {}", res.rc, res.text))
+            }
+        })
+}
 
-fn get_tls_connector() -> TlsConnector {
-    // Create a TlsConnectorBuilder
+fn get_tls_connector(accept_invalid_certs: bool) -> TlsConnector {
     let mut builder = TlsConnector::builder();
-
-    // Disable certificate verification for development purposes (for testing only)
-    builder.danger_accept_invalid_certs(true); // Allow invalid certificates (unsafe for production)
-
-    // Build the connector from the builder
+    if accept_invalid_certs {
+        builder.danger_accept_invalid_certs(true);
+    }
     builder.build().unwrap()
 }

@@ -17,12 +17,14 @@
 		"@mui/material": "^6.4.5",
 		"@mui/x-tree-view": "^7.26.0",
 		"@tauri-apps/api": "^2.2.0",
+		"@tauri-apps/plugin-clipboard-manager": "^2.2.1",
 		"@uiw/react-json-view": "^2.0.0-alpha.30",
 		"framer-motion": "^12.4.5",
 		"next": "15.1.7",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
-		"react-resizable": "^3.0.5"
+		"react-resizable": "^3.0.5",
+		"react-xml-viewer": "^3.0.1"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",
